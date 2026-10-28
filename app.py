@@ -232,7 +232,29 @@ class HybridLSTMARIMAPredictor:
             
             # Optimize ensemble weights
             self.optimize_ensemble_weights(data.tail(100))
-            
+
+            # Save trained model artifacts
+            os.makedirs(self.models_dir, exist_ok=True)
+
+            # Save the LSTM model
+            self.lstm_model.save(
+                os.path.join(self.models_dir, f"{ticker}_lstm.keras")
+            )
+
+            # Save the fitted LSTM scaler
+            joblib.dump(
+                self.lstm_scaler,
+                os.path.join(self.models_dir, f"{ticker}_scaler.joblib")
+            )
+
+            # Save the fitted ARIMA model, if available
+            if getattr(self, "arima_model", None) is not None:
+                joblib.dump(
+                    self.arima_model,
+                    os.path.join(self.models_dir, f"{ticker}_arima.joblib")
+                )
+
+            print(f"💾 Model artifacts saved for {ticker}")
             print(f"✅ Hybrid training completed!")
             print(f"🧠 LSTM Loss: {lstm_train_loss:.6f} / {lstm_val_loss:.6f}")
             print(f"⚖️ Weights: LSTM {self.hybrid_weights['lstm']:.2f}, ARIMA {self.hybrid_weights['arima']:.2f}")
