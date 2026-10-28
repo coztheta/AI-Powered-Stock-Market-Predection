@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Login - AI Trading Platform{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-left">
+        <div class="auth-branding">
+            <div class="logo-container">
+                <i class="fas fa-chart-line"></i>
+                <h1>AI Trading</h1>
+            </div>
+            <p class="tagline">Powered by LSTM-ARIMA Hybrid Intelligence</p>
+        </div>
+        
+        <div class="auth-features">
+            <div class="feature-item">
+                <i class="fas fa-brain"></i>
+                <div>
+                    <h3>Advanced AI Models</h3>
+                    <p>Hybrid LSTM-ARIMA predictions with 94%+ accuracy</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-chart-area"></i>
+                <div>
+                    <h3>Real-time Analytics</h3>
+                    <p>Live market data and instant predictions</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-shield-alt"></i>
+                <div>
+                    <h3>Secure & Reliable</h3>
+                    <p>Bank-grade security for your data</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="auth-right">
+        <div class="auth-card">
+            <h2>Welcome Back</h2>
+            <p class="auth-subtitle">Login to access your AI trading dashboard</p>
+            
+            <div id="loginError" class="error-message" style="display: none;"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" name="email" placeholder="your@email.com" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="link-text">Forgot password?</a>
+                </div>
+                
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <span>Login</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+            
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+            
+            <p class="auth-switch">
+                Don't have an account? 
+                <a href="{{ url_for('signup') }}">Sign up for free</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const loginBtn = document.getElementById('loginBtn');
+    const errorDiv = document.getElementById('loginError');
+    
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+    errorDiv.style.display = 'none';
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = '/';
+        } else {
+            errorDiv.textContent = data.error || 'Login failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<span>Login</span><i class="fas fa-arrow-right"></i>';
+    }
+});
+</script>
+{% endblock %}

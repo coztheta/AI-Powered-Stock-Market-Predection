@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - AI Trading Platform{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-left">
+        <div class="auth-branding">
+            <div class="logo-container">
+                <i class="fas fa-chart-line"></i>
+                <h1>AI Trading</h1>
+            </div>
+            <p class="tagline">Start Your AI-Powered Trading Journey</p>
+        </div>
+        
+        <div class="auth-stats">
+            <div class="stat-item">
+                <h3>94%+</h3>
+                <p>Model Accuracy</p>
+            </div>
+            <div class="stat-item">
+                <h3>36+</h3>
+                <p>Global Stocks</p>
+            </div>
+            <div class="stat-item">
+                <h3>Real-time</h3>
+                <p>Predictions</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="auth-right">
+        <div class="auth-card">
+            <h2>Create Account</h2>
+            <p class="auth-subtitle">Join thousands of smart traders</p>
+            
+            <div id="signupError" class="error-message" style="display: none;"></div>
+            
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="name" name="name" placeholder="John Doe" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" name="email" placeholder="your@email.com" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required minlength="6">
+                    </div>
+                    <small class="form-hint">Minimum 6 characters</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="terms" required>
+                        <span>I agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a></span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn-primary" id="signupBtn">
+                    <span>Create Account</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+            
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+            
+            <p class="auth-switch">
+                Already have an account? 
+                <a href="{{ url_for('login') }}">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const signupBtn = document.getElementById('signupBtn');
+    const errorDiv = document.getElementById('signupError');
+    
+    signupBtn.disabled = true;
+    signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+    errorDiv.style.display = 'none';
+    
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const response = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = '/';
+        } else {
+            errorDiv.textContent = data.error || 'Registration failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+    } finally {
+        signupBtn.disabled = false;
+        signupBtn.innerHTML = '<span>Create Account</span><i class="fas fa-arrow-right"></i>';
+    }
+});
+</script>
+{% endblock %}

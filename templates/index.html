@@ -1,0 +1,861 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI Trading Platform{% endblock %}
+
+{% block content %}
+
+<style>
+/* Sidebar support actions and styled dashboard popovers */
+.sidebar-utility{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-top:1px solid rgba(128,128,128,.22)}
+.sidebar-utility .nav-item{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.sidebar-utility .nav-item:hover,.sidebar-utility .nav-item:focus-visible{background:rgba(128,128,128,.12);outline:none}
+.sidebar-popover{position:fixed;z-index:2000;left:270px;top:88px;width:min(340px,calc(100vw - 290px));max-height:min(70vh,520px);overflow-y:auto;padding:18px;border:1px solid rgba(128,128,128,.25);border-radius:14px;background:var(--card-bg,#fff);color:var(--text-color,#1f2937);box-shadow:0 16px 45px rgba(0,0,0,.2)}
+.sidebar-popover[hidden]{display:none!important}
+.sidebar-popover-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.sidebar-popover-header h3{margin:0;font-size:1.05rem}
+.sidebar-popover-close{border:0;border-radius:8px;padding:5px 9px;background:rgba(128,128,128,.12);color:inherit;cursor:pointer;font-size:1.1rem}
+.notice-item{padding:11px 0;border-top:1px solid rgba(128,128,128,.18)}
+.notice-item:first-of-type{border-top:0}
+.notice-item strong{display:block;margin-bottom:4px}
+.notice-item p,.help-list li,.popover-muted{margin:0;line-height:1.5;font-size:.92rem;opacity:.86}
+.help-list{padding-left:20px;margin:0}
+.help-list li{margin:0 0 10px}
+@media(max-width:700px){.sidebar-popover{left:12px;right:12px;top:72px;width:auto;max-width:none}}
+</style>
+
+<div class="dashboard-container" id="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>AI Trading</span>
+            </div>
+        </div>
+        
+            
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="#markets" class="nav-item" data-section="markets">
+                <i class="fas fa-chart-area"></i>
+                <span>Markets</span>
+            </a>
+
+            <a href="#predictions" class="nav-item" data-section="predictions">
+                <i class="fas fa-brain"></i>
+                <span>AI Predictions</span>
+            </a>
+
+            <a href="#portfolio" class="nav-item" data-section="portfolio">
+                <i class="fas fa-briefcase"></i>
+                <span>Portfolio</span>
+            </a>
+
+            <a href="#history" class="nav-item" data-section="history">
+                <i class="fas fa-history"></i>
+                <span>History</span>
+            </a>
+
+            <a href="#settings" class="nav-item" data-section="settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        
+        <div class="sidebar-utility" aria-label="Support and updates">
+            <button type="button" class="nav-item" id="notificationBtn"
+                    aria-controls="notificationPanel" aria-expanded="false">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+                <span class="badge" aria-label="3 notifications">3</span>
+            </button>
+            <button type="button" class="nav-item" id="helpBtn"
+                    aria-controls="helpPanel" aria-expanded="false">
+                <i class="fas fa-question-circle"></i>
+                <span>Help</span>
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <div class="user-name">Trader</div>
+                    <div class="user-email">user@email.com</div>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->        
+        <header class="top-bar">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input
+                    type="text"
+                    id="stockSearch"
+                    placeholder="Search stocks (e.g., AAPL, RELIANCE.NS)"
+                >
+            </div>
+</header>
+
+        <!-- Notification popover -->
+        <section class="sidebar-popover" id="notificationPanel" role="dialog"
+                 aria-labelledby="notificationPanelTitle" aria-modal="false" hidden>
+            <div class="sidebar-popover-header">
+                <h3 id="notificationPanelTitle">Notifications</h3>
+                <button type="button" class="sidebar-popover-close"
+                        data-close-popover aria-label="Close notifications">&times;</button>
+            </div>
+            <div class="notice-item">
+                <strong>Dashboard ready</strong>
+                <p>Your AI Trading dashboard is ready to use.</p>
+            </div>
+            <div class="notice-item">
+                <strong>Prediction status</strong>
+                <p>Select a stock and choose Get AI Prediction to view the latest available forecast.</p>
+            </div>
+            <div class="notice-item">
+                <strong>Model training</strong>
+                <p>Training may take a few minutes. The Train Model button reports whether training succeeds.</p>
+            </div>
+            <p class="popover-muted">These are dashboard tips, not live market alerts.</p>
+        </section>
+
+        <!-- Help popover -->
+        <section class="sidebar-popover" id="helpPanel" role="dialog"
+                 aria-labelledby="helpPanelTitle" aria-modal="false" hidden>
+            <div class="sidebar-popover-header">
+                <h3 id="helpPanelTitle">AI Stock Predictor Help</h3>
+                <button type="button" class="sidebar-popover-close"
+                        data-close-popover aria-label="Close help">&times;</button>
+            </div>
+            <ol class="help-list">
+                <li>Use the stock search field at the top of the dashboard and press Enter, or select a stock from the dropdown.</li>
+                <li>Choose <strong>Train Model</strong> if the selected stock needs model training, then wait for the result message.</li>
+                <li>Choose <strong>Get AI Prediction</strong> to request the forecast.</li>
+                <li>Review the current price, 30-day prediction, expected return, confidence value, and chart.</li>
+                <li>Use the sidebar to switch between Dashboard, Markets, AI Predictions, Portfolio, History, and Settings.</li>
+            </ol>
+            <p class="popover-muted">Portfolio tracking and saved prediction history are placeholders in this version.</p>
+        </section>
+
+
+        
+        <!-- Market Overview -->
+        <section class="market-overview" id="markets">
+            <h2 class="section-title">Market Overview</h2>
+            <div class="market-cards">
+                <div class="market-card trending-up">
+                    <div class="market-card-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="market-card-content">
+                        <h3>S&P 500</h3>
+                        <div class="market-price">4,783.83</div>
+                        <div class="market-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            +1.24%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="market-card trending-up">
+                    <div class="market-card-icon">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                    <div class="market-card-content">
+                        <h3>NIFTY 50</h3>
+                        <div class="market-price">21,456.85</div>
+                        <div class="market-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            +0.87%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="market-card trending-down">
+                    <div class="market-card-icon">
+                        <i class="fas fa-bitcoin-sign"></i>
+                    </div>
+                    <div class="market-card-content">
+                        <h3>NASDAQ</h3>
+                        <div class="market-price">15,123.45</div>
+                        <div class="market-change negative">
+                            <i class="fas fa-arrow-down"></i>
+                            -0.45%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="market-card">
+                    <div class="market-card-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="market-card-content">
+                        <h3>AI Models</h3>
+                        <div class="market-price">Active</div>
+                        <div class="market-change positive">
+                            <i class="fas fa-check-circle"></i>
+                            94% Acc
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Stock Selector & Prediction -->
+        <section class="prediction-section" id="predictions">
+            <div class="prediction-controls">
+                <h2 class="section-title">AI Stock Predictor</h2>
+                
+                <div class="controls-row">
+                    <div class="stock-selector">
+                        <select id="stockSelect" class="styled-select">
+                            <option value="">Select a stock...</option>
+                            {% for ticker, info in stocks.items() %}
+                            <option value="{{ ticker }}">{{ ticker }} - {{ info.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="trainModel()">
+                            <i class="fas fa-cogs"></i>
+                            Train Model
+                        </button>
+                        <button class="btn-primary" onclick="getPrediction()">
+                            <i class="fas fa-brain"></i>
+                            Get AI Prediction
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Container -->
+            <div id="resultsContainer" style="display: none;">
+                <!-- Stock Info Card -->
+                <div class="stock-info-card">
+                    <div class="stock-header">
+                        <div>
+                            <h3 id="stockName">Stock Name</h3>
+                            <p class="stock-meta">
+                                <span id="stockSymbol">SYMBOL</span> | 
+                                <span id="stockExchange">EXCHANGE</span> | 
+                                <span id="stockSector">SECTOR</span>
+                            </p>
+                        </div>
+                        <div class="stock-price-display">
+                            <div class="current-price" id="currentPrice">$0.00</div>
+                            <div class="price-change" id="priceChange">+0.00%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Prediction Results -->
+                <div class="prediction-results-grid">
+                    <div class="result-card">
+                        <div class="result-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="result-content">
+                            <div class="result-label">Current Price</div>
+                            <div class="result-value" id="resultCurrent">$0.00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card highlight">
+                        <div class="result-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="result-content">
+                            <div class="result-label">30-Day Prediction</div>
+                            <div class="result-value" id="resultFuture">$0.00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-icon">
+                            <i class="fas fa-percent"></i>
+                        </div>
+                        <div class="result-content">
+                            <div class="result-label">Expected Return</div>
+                            <div class="result-value" id="resultReturn">+0.00%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="result-content">
+                            <div class="result-label">AI Confidence</div>
+                            <div class="result-value" id="resultConfidence">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chart -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Price Prediction Chart</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="legend-dot lstm"></span>
+                                LSTM Prediction
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-dot arima"></span>
+                                ARIMA Prediction
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-dot hybrid"></span>
+                                Hybrid Prediction
+                            </span>
+                        </div>
+                    </div>
+                    <canvas id="predictionChart"></canvas>
+                </div>
+                
+                <!-- Model Info -->
+                <div class="model-info-card">
+                    <h3>
+                        <i class="fas fa-info-circle"></i>
+                        Model Information
+                    </h3>
+                    <div class="model-info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Model Type:</span>
+                            <span class="info-value" id="modelType">Hybrid LSTM-ARIMA</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">LSTM Weight:</span>
+                            <span class="info-value" id="lstmWeight">60%</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">ARIMA Weight:</span>
+                            <span class="info-value" id="arimaWeight">40%</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Prediction Days:</span>
+                            <span class="info-value" id="predictionDays">30</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div id="loadingState" style="display: none;">
+                <div class="loading-card">
+                    <div class="loading-spinner"></div>
+                    <h3>AI is analyzing...</h3>
+                    <p>Processing stock data through LSTM-ARIMA hybrid model</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Stocks -->
+        <section class="trending-section">
+            <h2 class="section-title">Trending Stocks</h2>
+            <div class="trending-grid" id="trendingStocks">
+                <!-- Dynamic content -->
+            </div>
+        </section>
+
+        <!-- Portfolio -->
+        <section id="portfolio" class="nav-placeholder" hidden>
+            <h2>My Portfolio</h2>
+            <p>Track your stock investments here.</p>
+            <div class="market-card">
+                <h3>Portfolio Tracking</h3>
+                <p>Coming soon: holdings, purchase prices, current values,
+                and profit or loss.</p>
+            </div>
+        </section>
+
+        <!-- Prediction History -->
+        <section id="history" class="nav-placeholder" hidden>
+            <h2>Prediction History</h2>
+            <p>Review your previous AI predictions.</p>
+            <div class="market-card">
+                <h3>Prediction Records</h3>
+                <p>Saving and comparing historical predictions
+                has not been implemented yet.</p>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="settings" class="nav-placeholder" hidden>
+            <h2>Settings</h2>
+            <p>Configure your dashboard preferences.</p>
+            <div class="market-card">
+                <h3>Preferences</h3>
+                <p>Custom settings are not implemented yet.</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script>
+let predictionChart = null;
+
+// Logout function
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+
+// Get AI Prediction
+async function getPrediction() {
+    const ticker = document.getElementById('stockSelect').value;
+    
+    if (!ticker) {
+        alert('Please select a stock');
+        return;
+    }
+    
+    document.getElementById('resultsContainer').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/predict_hybrid/${ticker}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        displayResults(data);
+    } catch (error) {
+        alert('Error getting prediction: ' + error.message);
+    } finally {
+        document.getElementById('loadingState').style.display = 'none';
+    }
+}
+
+// Display prediction results
+
+function displayResults(data) {
+    const weights = data.model_weights || data.modelWeights || {};
+    const predictions = data.predictions || {
+        hybrid: data.hybrid_predictions || [],
+        lstm: data.lstm_predictions || [],
+        arima: data.arima_predictions || []
+    };
+
+    if (!predictions.hybrid.length) {
+        alert('No hybrid predictions were returned. Please train the model first.');
+        return;
+    }
+
+    document.getElementById('resultsContainer').style.display = 'block';
+
+    const currentPrice = Number(data.current_price ?? data.currentPrice ?? 0);
+    const futurePrice = Number(data.final_price ?? data.futurePrice ?? predictions.hybrid.at(-1));
+    const expectedReturn = Number(data.expected_return ?? data.expectedReturn ?? 0);
+
+    document.getElementById('stockName').textContent =
+        data.name || data.symbol || 'Selected stock';
+    document.getElementById('stockSymbol').textContent = data.symbol || '';
+    document.getElementById('stockExchange').textContent = data.exchange || 'N/A';
+    document.getElementById('stockSector').textContent = data.sector || 'N/A';
+    document.getElementById('currentPrice').textContent = currentPrice.toFixed(2);
+
+    const returnClass = expectedReturn >= 0 ? 'positive' : 'negative';
+    const returnText = `${expectedReturn >= 0 ? '+' : ''}${expectedReturn.toFixed(2)}%`;
+
+    document.getElementById('priceChange').textContent = returnText;
+    document.getElementById('priceChange').className = `price-change ${returnClass}`;
+
+    document.getElementById('resultCurrent').textContent = currentPrice.toFixed(2);
+    document.getElementById('resultFuture').textContent = futurePrice.toFixed(2);
+    document.getElementById('resultReturn').textContent = returnText;
+    document.getElementById('resultConfidence').textContent =
+        data.confidence != null ? `${data.confidence}%` : 'N/A';
+
+    document.getElementById('lstmWeight').textContent =
+        `${Math.round(Number(weights.lstm ?? 0) * 100)}%`;
+    document.getElementById('arimaWeight').textContent =
+        `${Math.round(Number(weights.arima ?? 0) * 100)}%`;
+    document.getElementById('predictionDays').textContent =
+        data.prediction_days ?? data.predictionDays ?? predictions.hybrid.length;
+
+    updateChart({
+        predictions: predictions
+    });
+}
+
+
+// Update prediction chart
+function updateChart(data) {
+    const ctx = document.getElementById('predictionChart');
+    
+    if (predictionChart) {
+        predictionChart.destroy();
+    }
+    
+    const labels = Array.from({length: data.predictions.hybrid.length}, (_, i) => `Day ${i + 1}`);
+    
+    predictionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Hybrid Prediction',
+                    data: data.predictions.hybrid,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'LSTM Prediction',
+                    data: data.predictions.lstm.slice(0, 10),
+                    borderColor: '#8b5cf6',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'ARIMA Prediction',
+                    data: data.predictions.arima.slice(0, 10),
+                    borderColor: '#ec4899',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Train model
+async function trainModel() {
+    const ticker = document.getElementById('stockSelect').value;
+    
+    if (!ticker) {
+        alert('Please select a stock');
+        return;
+    }
+    
+    if (!confirm(`Train LSTM-ARIMA hybrid model for ${ticker}? This may take 2-5 minutes.`)) {
+        return;
+    }
+    
+    document.getElementById('loadingState').style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/train_hybrid/${ticker}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`Training completed!\n\nTraining Loss: ${data.lstm_train_loss.toFixed(6)}\nValidation Loss: ${data.lstm_val_loss.toFixed(6)}\nEpochs: ${data.epochs_completed}`);
+        } else {
+            alert('Training failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Training error: ' + error.message);
+    } finally {
+        document.getElementById('loadingState').style.display = 'none';
+    }
+}
+
+// Load trending stocks
+async function loadTrendingStocks() {
+    try {
+        const response = await fetch('/api/stocks');
+        const data = await response.json();
+        
+        const trendingContainer = document.getElementById('trendingStocks');
+        const trendingTickers = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'RELIANCE.NS', 'TCS.NS'];
+        
+        trendingContainer.innerHTML = trendingTickers
+            .filter(ticker => data.stocks[ticker])
+            .map(ticker => {
+                const stock = data.stocks[ticker];
+                return `
+                    <div class="trending-card" onclick="document.getElementById('stockSelect').value='${ticker}'">
+                        <h4>${ticker}</h4>
+                        <p>${stock.name}</p>
+                        <div class="trending-badge">${stock.sector}</div>
+                    </div>
+                `;
+            })
+            .join('');
+    } catch (error) {
+        console.error('Error loading trending stocks:', error);
+    }
+}
+
+
+
+function initializeSidebarNavigation() {
+    const links = document.querySelectorAll(
+        '.sidebar-nav .nav-item[data-section]'
+    );
+
+    const sectionIds = [
+        'dashboard',
+        'markets',
+        'predictions',
+        'portfolio',
+        'history',
+        'settings'
+    ];
+
+    const optionalIds = ['portfolio', 'history', 'settings'];
+    const optionalPanels = optionalIds
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+
+    const marketSection = document.getElementById('markets');
+    const predictionSection = document.getElementById('predictions');
+    const trendingSection = document.querySelector('.trending-section');
+
+    const mainSections = [
+        marketSection,
+        predictionSection,
+        trendingSection
+    ].filter(Boolean);
+
+    function showSection(sectionId, shouldScroll = true) {
+        if (!sectionIds.includes(sectionId)) {
+            sectionId = 'dashboard';
+        }
+
+        const isOptional = optionalIds.includes(sectionId);
+
+        // Optional pages should be explicitly hidden/shown with display too,
+        // so a CSS rule for .nav-placeholder cannot keep them invisible.
+        optionalPanels.forEach(panel => {
+            const isSelected = panel.id === sectionId && isOptional;
+            panel.hidden = !isSelected;
+            panel.style.display = isSelected ? 'block' : 'none';
+        });
+
+        // Keep the main dashboard visible for Dashboard, Markets and
+        // AI Predictions, but make optional pages easy to see on their own.
+        mainSections.forEach(section => {
+            section.style.display = isOptional ? 'none' : '';
+        });
+
+        links.forEach(link => {
+            link.classList.toggle(
+                'active',
+                link.dataset.section === sectionId
+            );
+        });
+
+        if (!shouldScroll) {
+            return;
+        }
+
+        if (isOptional) {
+            const panel = document.getElementById(sectionId);
+            if (panel) {
+                panel.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        } else if (sectionId === 'dashboard') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            const target = document.getElementById(sectionId);
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+    }
+
+    links.forEach(link => {
+        link.addEventListener('click', event => {
+            event.preventDefault();
+
+            const sectionId = link.dataset.section;
+            showSection(sectionId);
+
+            window.history.replaceState(
+                null,
+                '',
+                '#' + sectionId
+            );
+        });
+    });
+
+    const initialSection = window.location.hash.substring(1);
+    showSection(
+        sectionIds.includes(initialSection)
+            ? initialSection
+            : 'dashboard',
+        false
+    );
+}
+
+function initializeStockSearch() {
+    const searchInput = document.getElementById('stockSearch');
+    const stockSelect = document.getElementById('stockSelect');
+
+    if (!searchInput || !stockSelect) {
+        console.error('Stock search or selector not found.');
+        return;
+    }
+
+    function findStock() {
+        const query = searchInput.value.trim().toLowerCase();
+
+        if (!query) return;
+
+        const options = Array.from(stockSelect.options);
+
+        const match = options.find(option =>
+            option.value &&
+            (
+                option.value.toLowerCase() === query ||
+                option.textContent.toLowerCase().includes(query)
+            )
+        );
+
+        if (match) {
+            stockSelect.value = match.value;
+
+            // Move the page to the AI Stock Predictor section.
+            document.querySelector('.prediction-section')
+                ?.scrollIntoView({ behavior: 'smooth' });
+
+            stockSelect.dispatchEvent(
+                new Event('change', { bubbles: true })
+            );
+        } else {
+            alert('Stock not found. Try a symbol such as INFY.NS or TCS.NS.');
+        }
+    }
+
+    searchInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            findStock();
+        }
+    });
+}
+
+
+function initializeTopBarButtons() {
+    const notificationBtn = document.getElementById('notificationBtn');
+    const helpBtn = document.getElementById('helpBtn');
+    const notificationPanel = document.getElementById('notificationPanel');
+    const helpPanel = document.getElementById('helpPanel');
+    const buttons = [notificationBtn, helpBtn].filter(Boolean);
+    const panels = [notificationPanel, helpPanel].filter(Boolean);
+
+    function closePanels() {
+        panels.forEach(panel => { panel.hidden = true; });
+        buttons.forEach(button => button.setAttribute('aria-expanded', 'false'));
+    }
+
+    function togglePanel(button, panel) {
+        if (!button || !panel) return;
+        const shouldOpen = panel.hidden;
+        closePanels();
+        if (shouldOpen) {
+            panel.hidden = false;
+            button.setAttribute('aria-expanded', 'true');
+        }
+    }
+
+    if (notificationBtn && notificationPanel) {
+        notificationBtn.addEventListener('click', function(event) {
+            event.stopPropagation();
+            togglePanel(notificationBtn, notificationPanel);
+        });
+    }
+    if (helpBtn && helpPanel) {
+        helpBtn.addEventListener('click', function(event) {
+            event.stopPropagation();
+            togglePanel(helpBtn, helpPanel);
+        });
+    }
+
+    panels.forEach(panel => {
+        panel.addEventListener('click', function(event) {
+            event.stopPropagation();
+            if (event.target.closest('[data-close-popover]')) closePanels();
+        });
+    });
+
+    document.addEventListener('click', function(event) {
+        const clickedButton = buttons.some(button => button.contains(event.target));
+        const clickedPanel = panels.some(panel => panel.contains(event.target));
+        if (!clickedButton && !clickedPanel) closePanels();
+    });
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') closePanels();
+    });
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    initializeSidebarNavigation();
+    initializeStockSearch();
+    initializeTopBarButtons();
+    loadTrendingStocks();
+});
+
+</script>
+{% endblock %}
